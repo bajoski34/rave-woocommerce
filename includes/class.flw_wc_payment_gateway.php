@@ -3,7 +3,6 @@
   if( ! defined( 'ABSPATH' ) ) { exit; }
   
   define("BASEPATH", 1);
-  
   require_once( FLW_WC_DIR_PATH . 'flutterwave-rave-php-sdk/lib/rave.php' );
   require_once( FLW_WC_DIR_PATH . 'includes/eventHandler.php' );
       
@@ -20,6 +19,8 @@
      * @return void
      */
     public function __construct() {
+
+      
 
       $this->base_url = 'https://api.ravepay.co';
       $this->id = 'rave';
@@ -45,6 +46,8 @@
       $this->payment_options = $this->get_option( 'payment_options' );
       $this->payment_style = $this->get_option( 'payment_style' );
       $this->barter = $this->get_option( 'barter' );
+      $this->logging_option = $this->get_option('logging_option');
+      $this->country ="";
       // $this->modal_logo = $this->get_option( 'modal_logo' );
 
       // enable saved cards
@@ -80,6 +83,8 @@
       $this->public_key   = $this->test_public_key;
       $this->secret_key   = $this->test_secret_key;
      
+      
+      
 
       if ( 'yes' === $this->go_live ) {
         // $this->base_url = 'https://api.ravepay.co';
@@ -114,6 +119,14 @@
           'label'       => __( 'Live mode', 'flw-payments' ),
           'type'        => 'checkbox',
           'description' => __( 'Check this box if you\'re using your live keys.', 'flw-payments' ),
+          'default'     => 'no',
+          'desc_tip'    => true
+        ),
+        'logging_option' => array(
+          'title'       => __( 'Disable Logging', 'flw-payments' ),
+          'label'       => __( 'Disable Logging', 'flw-payments' ),
+          'type'        => 'checkbox',
+          'description' => __( 'Check this box if you\'re disabling logging.', 'flw-payments' ),
           'default'     => 'no',
           'desc_tip'    => true
         ),
@@ -310,7 +323,7 @@
             $amount    = $order->get_total();
             $main_order_key = $order->get_order_key();
             $email     = $order->get_billing_email();
-            $currency     = $order->get_order_currency();
+            $currency     = $order->get_currency();
         }
         
         // $amount    = $order->order_total;
@@ -368,8 +381,10 @@
     public function flw_verify_payment() {
            
       $publicKey = $this->public_key; 
-      $secretKey = $this->secret_key; 
+      $secretKey = $this->secret_key;
+      $logging_option = $this->logging_option; 
 
+      
       // if($this->go_live === 'yes'){
       //   $env = 'live';
       // }else{
@@ -389,7 +404,7 @@
         
         $ref = uniqid("WOOC_". $order_id."_".time()."_");
         
-        $payment = new Rave($publicKey, $secretKey, $ref, $overrideRef);
+        $payment = new Rave($publicKey, $secretKey, $ref, $overrideRef,$logging_option);
         
         // if($this->modal_logo){
         //   $rave_m_logo = $this->modal_logo;
@@ -407,7 +422,7 @@
         ->setDescription($modal_desc)
         ->setTitle($modal_title)
         ->setCountry($this->country)
-        ->setCurrency($order->get_order_currency())
+        ->setCurrency($order->get_currency())
         ->setEmail($order->get_billing_email())
         ->setFirstname($order->get_billing_first_name())
         ->setLastname($order->get_billing_last_name())
@@ -434,7 +449,7 @@
             $o = explode('_', $txn_ref);
             $order_id = intval( $o[1] );
             $order = wc_get_order( $order_id );
-            $payment = new Rave($publicKey, $secretKey, $txn_ref, $overrideRef);
+            $payment = new Rave($publicKey, $secretKey, $txn_ref, $overrideRef,$this->logging_option);
         
             $payment->logger->notice('Payment completed. Now requerying payment.');
             
@@ -444,7 +459,7 @@
             header("Location: ".$redirect_url);
             die(); 
         }else{
-          $payment = new Rave($publicKey, $secretKey, $txn_ref, $overrideRef);
+          $payment = new Rave($publicKey, $secretKey, $txn_ref, $overrideRef, $this->logging_option);
         
           $payment->logger->notice('Error with requerying payment.');
           

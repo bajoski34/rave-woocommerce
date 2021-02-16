@@ -8,9 +8,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 require __DIR__.'/../vendor/autoload.php';
 
 use Monolog\Logger;
+use Monolog\Handler\NullHandler;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Handler\SyslogUdpHandler;
 use Unirest\Request;
 use Unirest\Request\Body;
+
 
 /**
  * Flutterwave's Rave payment gateway PHP SDK
@@ -58,7 +61,7 @@ class Rave {
      * @param boolean $overrideRefWithPrefix Set this parameter to true to use your prefix as the transaction reference
      * @return object
      * */
-    function __construct($publicKey, $secretKey, $prefix, $overrideRefWithPrefix = false){
+    function __construct($publicKey, $secretKey, $prefix, $overrideRefWithPrefix = false,$disable_logging_option){
         $this->publicKey = $publicKey;
         $this->secretKey = $secretKey;
         // $this->env = $env;
@@ -68,7 +71,20 @@ class Rave {
         // create a log channel
         $log = new Logger('flutterwave/rave');
         $this->logger = $log;
-        $log->pushHandler(new RotatingFileHandler('rave.log', 90, Logger::DEBUG));
+
+        if($disable_logging_option === 'yes'){
+
+            $log->pushHandler(new NullHandler()); 
+
+        }else{
+
+            $log->pushHandler(new RotatingFileHandler('rave.log', 90, Logger::DEBUG)); 
+
+        }
+
+        //$log->pushHandler(new RotatingFileHandler('rave.log', 90, Logger::DEBUG));  
+
+        
         $this->createReferenceNumber();
         
         // if($this->env === 'staging'){

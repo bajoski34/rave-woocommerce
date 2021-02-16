@@ -16,7 +16,7 @@
           function onInit($initializationData){
               // Save the transaction to your DB.
                 $this->order->add_order_note('Payment initialized via Rave');
-                update_post_meta( $this->order->id, '_flw_payment_txn_ref', $initializationData['txref'] );
+                update_post_meta( $this->order->get_id(), '_flw_payment_txn_ref', $initializationData['txref'] );
                 $this->order->add_order_note('Your transaction reference: '.$initializationData['txref']);
           }
           
@@ -28,8 +28,9 @@
               // Get the transaction from your DB using the transaction reference (txref)
               // Check if you have previously given value for the transaction. If you have, redirect to your successpage else, continue
               if($transactionData->chargecode === '00' || $transactionData->chargecode === '0'){
-                  if($transactionData->currency == $this->order->get_order_currency() && $transactionData->amount == $this->order->order_total){
-                      $this->order->payment_complete( $this->order->id );
+                  if($transactionData->currency == $this->order->get_currency() && $transactionData->amount == $this->order->get_total()){
+                      $this->order->payment_complete( $this->order->get_id() );
+                      $this->order->update_status( 'completed' );
                       $this->order->add_order_note('Payment was successful on Rave');
                       $this->order->add_order_note('Flutterwave transaction reference: '.$transactionData->flwref); 
 
@@ -45,7 +46,7 @@
                         $customer_note .= 'Your payment successfully went through, but we have to put your order <strong>on-hold</strong> ';
                         $customer_note .= 'because the we couldn\t verify your order. Please, contact us for information regarding this order.';
                         $admin_note     = 'Attention: New order has been placed on hold because of incorrect payment amount or currency. Please, look into it. <br>';
-                        $admin_note    .= 'Amount paid: '. $transactionData->currency.' '. $transactionData->amount.' <br> Order amount: '.$this->order->get_order_currency().' '. $this->order->order_total.' <br> Reference: '.$transactionData->txref;
+                        $admin_note    .= 'Amount paid: '. $transactionData->currency.' '. $transactionData->amount.' <br> Order amount: '.$this->order->get_currency().' '. $this->order->get_total().' <br> Reference: '.$transactionData->txref;
             
                         $this->order->add_order_note( $customer_note, 1 );
                         $this->order->add_order_note( $admin_note );
